@@ -8,12 +8,12 @@ let nano
 const sqldb = require('./lib/leveldb.js')
 
 // download a whole changes feed in one long HTTP request
-const spoolChanges = async (opts, theSchema, maxChange) => {
+const spoolChanges = async (opts, maxChange) => {
   let bar
 
   // progress bar
   if (opts.verbose) {
-    bar = new ProgressBar('downloading ' + opts.database + ' [:bar] :percent :etas', { total: maxChange, width: 30 })
+    bar = new ProgressBar('snapshotting ' + opts.database + ' [:bar] :percent :etas', { total: maxChange, width: 30 })
   }
 
   // return a Promise
@@ -26,7 +26,7 @@ const spoolChanges = async (opts, theSchema, maxChange) => {
     func.apply(changesReader, [params]).on('batch', async (b, done) => {
       if (b.length > 0) {
         // perform database operation
-        await sqldb.insertBulk(opts, opts.database, theSchema, b)
+        await sqldb.insertBulk(opts, opts.database, b)
 
         // update the progress bar
         if (opts.verbose) {
@@ -55,13 +55,19 @@ const spoolChanges = async (opts, theSchema, maxChange) => {
 // start spooling and monitoring the changes feed
 const start = async (opts) => {
   // override defaults
-  const theSchema = {}
   const defaults = {
     url: 'http://localhost:5984',
     since: '0',
     verbose: false
   }
   opts = Object.assign(defaults, opts)
+
+  // get lastSeq from previous backups
+  const ls = util.getLastSeq(opts.database)
+  if (ls) {
+    opts.since = ls
+    console.log('Resuming from last known sequence', util.extractSequenceNumber(ls))
+  }
 
   // setup nano
   nano = require('nano')(opts.url)
@@ -80,7 +86,7 @@ const start = async (opts) => {
   // spool changes
   debug('Spooling changes')
   opts.usableDbName = util.calculateUsableDbName(opts, opts.database, null)
-  const status = await spoolChanges(opts, theSchema, maxChange)
+  const status = await spoolChanges(opts, maxChange)
   await sqldb.close()
 
   // write meta data
