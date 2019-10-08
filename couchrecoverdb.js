@@ -5,6 +5,8 @@ const level = require('level')
 const async = require('async')
 const rimraf = require('rimraf')
 
+// stream through all items in database and add to
+// a queue
 const enqueueAllData = async (db, q) => {
   return new Promise((resolve, reject) => {
     db.createReadStream({ reverse: true })
@@ -20,6 +22,7 @@ const enqueueAllData = async (db, q) => {
   })
 }
 
+// generate a random database name
 const randomDBName = () => {
   const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789'
   const retval = []
@@ -29,9 +32,10 @@ const randomDBName = () => {
   return retval.join('')
 }
 
-const restore = async (opts) => {
+// recover a database (to stdout)
+const recoverdb = async (opts) => {
   // create a levelDB database to store progress
-  const progressDBName = 'restore_progress_' + randomDBName()
+  const progressDBName = 'recoverdb_progress_' + randomDBName()
   const progressDB = level(progressDBName)
 
   const dbList = util.getFileList(opts.database, '.')
@@ -77,5 +81,5 @@ const restore = async (opts) => {
 }
 
 module.exports = {
-  restore
+  recoverdb
 }

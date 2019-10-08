@@ -2,6 +2,13 @@
 
 _couchsnapshot_ is a suite command-line utilities that allow a CouchDB database to be backed up as a series of timestamped snapshots. 
 
+![couchsnapshot](img/couchsnapshot.png)
+
+Each coloured stripe in the above diagram is a snapshot of changes in a single CouchDB database since the last snapshot. The snapshot can be queried to extract:
+
+- the history of a single document of a known `_id`.
+- to extract a the entire database up to a known timestamp (with a resolution of the snapshot timestamp).
+
 ## Installation
 
 Install on your machine (you need Node.js & npm installed):
@@ -81,6 +88,16 @@ Parameters:
 - `--database`/`--db`/`-d` - the database to snapshot
 - `--verbose` - output progress meter - default: true 
 
+e.g. 
+
+```sh
+# snapshot a single CouchDB database
+$ couchsnapshot --db cities
+Resuming from last known sequence 23557
+snapshotting cities [==============================] 100% 0.0s
+Written snapshot with 2 changes to cities_2019-10-08T14:25:01.065Z
+```
+
 ### couchrecoverid
 
 Retrieves a single document from the snapshot archive. Outputs to _stdout_.
@@ -88,6 +105,32 @@ Retrieves a single document from the snapshot archive. Outputs to _stdout_.
 - `--database`/`--db`/`-d` - the database to snapshot
 - `--id`/`-i` - the document id to recover
 - `--latest`/`-l` - only retrieve one document revision (the latest one) - default: false
+
+e.g.
+
+```sh
+# recover a single document by its id
+$ couchrecoverid --database cities --id 125242 --latest true
+
+From backup taken on  2019-10-08T13:25:56.541Z 
+
+{"_id":"100425","_rev":"3-c296e253d9dd65cc04afd1ebd336d31b","name":"Yanbu","latitude":24.08912,"longitude":38.06376,"country":"SA","population":200161,"timezone":"Asia/Riyadh"}
+```
+
+### couchrecoverdb
+
+Retrieves an entire database the snapshot archive. Outputs to _stdout_. The utility ensures
+that each document id is only written once.
+
+- `--database`/`--db`/`-d` - the database to snapshot
+- `--timestamp`/`-t` - the timestamp to recover to
+
+e.g.
+
+```sh
+# recover a database to a text file
+$ couchrecoverdb --db cities --timestamp 2019-10-08T13:25:56.541Z > cities.txt
+```
 
 ## How does it work?
 

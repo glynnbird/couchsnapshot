@@ -10,8 +10,8 @@ const args = require('yargs')
   .argv
 
 // start the data warehouse
-const couchrecover = require('../couchrecover.js')
+const couchrecoverid = require('../couchrecoverid.js')
 const main = async () => {
-  await couchrecover.recoverId(args)
+  await couchrecoverid.recoverId(args)
 }
 main()
