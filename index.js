@@ -22,11 +22,13 @@ const spoolChanges = async (opts, maxChange) => {
     const changesReader = new ChangesReader(opts.database, nano.request)
     const func = changesReader.spool
     const params = { since: opts.since, includeDocs: true }
+    let numChanges = 0
 
     func.apply(changesReader, [params]).on('batch', async (b, done) => {
       if (b.length > 0) {
         // perform database operation
         await sqldb.insertBulk(opts, opts.database, b)
+        numChanges += b.length
 
         // update the progress bar
         if (opts.verbose) {
@@ -39,8 +41,6 @@ const spoolChanges = async (opts, maxChange) => {
         }
       }
     }).on('end', async (lastSeq) => {
-      const numChanges = bar.curr
-
       // complete the progress bar
       if (opts.verbose) {
         bar.tick(bar.total - bar.curr)
@@ -102,6 +102,11 @@ const start = async (opts) => {
     timestamp: ts
   }
   fs.writeFileSync(path.join('.', newDir, 'manifest.json'), JSON.stringify(obj))
+
+  // output summary
+  if (opts.verbose) {
+    console.error('Written snapshot with', status.numChanges, 'changes to', newDir)
+  }
   process.exit(0)
 }
 
