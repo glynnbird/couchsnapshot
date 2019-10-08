@@ -132,6 +132,16 @@ e.g.
 $ couchrecoverdb --db cities --timestamp 2019-10-08T13:25:56.541Z > cities.txt
 ```
 
+The file `cities.txt` then contains one JSON document per line. This can be imported into CouchDB using the [couchimport](https://www.npmjs.com/package/couchimport) utility:
+
+```sh
+$ cat cities.txt | couchimport --type jsonl --db cities2
+```
+
+> Note: couchimport version 1.3.0 or above is required to import JSON documents including their revision token.
+
+where `cities2` is pre-existing, empty database.
+
 ## How does it work?
 
 The _couchsnapshot_ utility simply takes a copy of the winning revisions of each document in a database by consuming a databases's changes feed. The data is stored in a local LevelDB database - one LevelDB database per snapshot. Additional data such as the last sequence number and timestamp is added to each database. 
