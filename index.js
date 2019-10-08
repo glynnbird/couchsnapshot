@@ -39,13 +39,15 @@ const spoolChanges = async (opts, theSchema, maxChange) => {
         }
       }
     }).on('end', async (lastSeq) => {
+      const numChanges = bar.curr
+
       // complete the progress bar
       if (opts.verbose) {
         bar.tick(bar.total - bar.curr)
       }
 
       // pass back the last known sequence token
-      resolve(lastSeq)
+      resolve({ lastSeq: lastSeq, numChanges: numChanges })
     }).on('error', reject)
   })
 }
@@ -78,21 +80,22 @@ const start = async (opts) => {
   // spool changes
   debug('Spooling changes')
   opts.usableDbName = util.calculateUsableDbName(opts, opts.database, null)
-  const lastSeq = await spoolChanges(opts, theSchema, maxChange)
+  const status = await spoolChanges(opts, theSchema, maxChange)
   await sqldb.close()
 
   // write meta data
-  const seq = util.extractSequenceNumber(lastSeq)
-  const newDir = opts.usableDbName + '_' + seq
+  const ts = new Date().toISOString()
+  const newDir = opts.usableDbName + '_' + ts
   fs.renameSync(opts.usableDbName, newDir)
 
   // write manifest
   const obj = {
     db: opts.database,
-    lastSeq: lastSeq,
-    timestamp: new Date().toISOString()
+    lastSeq: status.lastSeq,
+    numChanges: status.numChanges,
+    timestamp: ts
   }
-  fs.writeFileSync(path.join('.', newDir, 'lastseq.txt'), JSON.stringify(obj))
+  fs.writeFileSync(path.join('.', newDir, 'manifest.json'), JSON.stringify(obj))
   process.exit(0)
 }
 
