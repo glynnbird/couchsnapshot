@@ -4,17 +4,19 @@ _couchsnapshot_ is a suite command-line utilities that allow a CouchDB database 
 
 ![couchsnapshot](img/couchsnapshot.png)
 
-Each coloured stripe in the above diagram is a snapshot of changes in a single CouchDB database since the last snapshot. The snapshot can be queried to extract:
+Each coloured stripe in the above diagram is a snapshot of changes in a single CouchDB database since the last snapshot. The snapshot set can be queried to extract:
 
 - the history of a single document of a known `_id`.
 - to extract a the entire database up to a known timestamp (with a resolution of the snapshot timestamp).
 
+The _couchsnapshot_ tooling doesn't have the ability to write data back to CouchDB, but it puts the data in a form that can be conusmed by tools that can e.g. [couchimport](https://www.npmjs.com/package/couchimport).
+
 ## Installation
 
-Install on your machine (you need Node.js & npm installed):
+Install on your machine (Node.js & npm required):
 
 ```sh
-$ npm install -f couchsnapshot
+$ npm install -g couchsnapshot
 ```
 
 ## Running snapshots
@@ -24,9 +26,9 @@ You run _couchsnapshot_ to backup a database `orders` like so:
 ```sh
 $ couchsnapshot --db orders
 snapshotting orders [==============================] 100% 0.0s
-```
+``` 
 
-> Note: the URL of your CouchDB service is assumed to be in an environment variable `COUCH_URL`.
+> Note: the URL of your CouchDB service is assumed to be in an environment variable `COUCH_URL` or the URL can be supplied with an additional `--url <url>` command-line option.
 
 The data is transferred from the CouchDB database and stored locally in a folder e.g.
 
@@ -41,7 +43,7 @@ $ couchsnapshot --db orders
 snapshotting orders [==============================] 100% 0.0s
 ```
 
-This time it only fetches the data that has changed since the last snapshot, storing data a new folder.
+This time it only fetches the data that has changed since the last snapshot, storing data in a new folder.
 
 ```sh
 orders_2019-10-02T09:30:01.041Z
@@ -61,15 +63,23 @@ From backup taken on  2019-10-08T10:43:53.569Z
 {"_id":"user100:0000vEYK2zb89n1QMdnr1MQ5Ax0wMaUa","_rev":"1-42a99d13a33e46b1f37f4f937d167458","type":"order","customerEmail":"jessi.payne@yahoo.com","saleDate":"2019-07-14","saleTime":"09:19:04","paymentRef":"PayPal6550849282680302","currency":"XOF","basket":[{"productId":"A402","productName":"cheese toe pushing","productVariant":"honolulu gaps"},{"productId":"A199","productName":"tablets melissa debug","productVariant":"hazards eh"}],"total":1713.5765,"status":"paid","dispatched":true,"dispatchAddress":{"street":"1553 Bark Street","town":"Gosport","zip":"BB9 5WF"},"dispatchCourierRef":"RoyalMail7732058936313772"}
 ```
 
-## Restoring a whole database from a known timestamp
+By default, `couchrecoverid` will return the entire history of a single document (or at least the history recorded in your snapshot archive), or you can elect to see only the newest revision with `--latest true`.
 
-To restore data to a new, empty database from a known timestamp simply run:
+## Recovering a whole database from a known timestamp
+
+To recover an entire database up to a known timestamp simply run:
 
 ```sh
-$ couchrestorets --db recoveredorders --timstamp 2019-10-08T10:43:53.569Z
+$ couchrecoverdb --db orders --timestamp 2019-10-08T10:43:53.569Z
 ```
 
-where `2019-10-08T10:43:53.569Z` is valid timestamp from one of your snapshots. This snapshots and the preceeding ones will be used to recreate the data up until that point.
+where `2019-10-08T10:43:53.569Z` is a valid timestamp from one of your snapshots. This snapshot and the preceeding ones will be used to recreate the data up until that point.
+
+The data is sent to _stdout_ and can redirected to a file with:
+
+```sh
+$ couchrecoverdb --db orders --timestamp 2019-10-08T10:43:53.569Z > orders.txt
+```
 
 ## Reference
 
@@ -102,9 +112,9 @@ Written snapshot with 2 changes to cities_2019-10-08T14:25:01.065Z
 
 Retrieves a single document from the snapshot archive. Outputs to _stdout_.
 
-- `--database`/`--db`/`-d` - the database to snapshot
-- `--id`/`-i` - the document id to recover
-- `--latest`/`-l` - only retrieve one document revision (the latest one) - default: false
+- `--database`/`--db`/`-d` - the database snapshot archive to inspect.
+- `--id`/`-i` - the document id to recover.
+- `--latest`/`-l` - only retrieve one document revision (the newest one) - default: false.
 
 e.g.
 
@@ -119,11 +129,11 @@ From backup taken on  2019-10-08T13:25:56.541Z
 
 ### couchrecoverdb
 
-Retrieves an entire database the snapshot archive. Outputs to _stdout_. The utility ensures
+Retrieves an entire database from the snapshot archive. Outputs to _stdout_. The utility ensures
 that each document id is only written once.
 
-- `--database`/`--db`/`-d` - the database to snapshot
-- `--timestamp`/`-t` - the timestamp to recover to
+- `--database`/`--db`/`-d` - the database snapshot archive to inspect.
+- `--timestamp`/`-t` - the timestamp to recover to.
 
 e.g.
 
@@ -144,8 +154,10 @@ where `cities2` is pre-existing, empty database.
 
 ## How does it work?
 
-The _couchsnapshot_ utility simply takes a copy of the winning revisions of each document in a database by consuming a databases's changes feed. The data is stored in a local LevelDB database - one LevelDB database per snapshot. Additional data such as the last sequence number and timestamp is added to each database. 
+The _couchsnapshot_ utility simply takes a copy of the winning revisions of each document in a database by consuming a databases's changes feed. The data is stored in a local LevelDB database - one LevelDB database per snapshot, where each key/value pair represents each document. Additional data such as the last sequence number and timestamp is added to each database. 
 
-LevelDB was chosen because it is fast and can keep up with the CouchDB changes feed. The data is compressed at rest making the snapshots nice and small. The LevelDB database is optimised for retrieval of documents by id, nothing else.
+LevelDB was chosen because it is fast enough to keep up with the CouchDB changes feed and the data is compressed at rest making the snapshots nice and small. The LevelDB database is optimised for retrieval of documents by id, nothing else.
 
 To recover a document by id, the LevelDB snapshot databases are interrogated in turn for a matching document (there may be several versions of the same document across the snapshots reflecting different document revisions over time). The snapshots are interrogated in newest-to-oldest order.
+
+To recover an entire database, the snapshots are interrogated in reverse (so newest to oldest) outputing each document but taking care to ensure that each document only appears once. A temporary LevelDB is used to keep track of document ids already processed.
