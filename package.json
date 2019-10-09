@@ -1,15 +1,15 @@
 {
-  "name": "couchdsnapshot",
-  "version": "1.6.1",
+  "name": "couchsnapshot",
+  "version": "0.1.0",
   "description": "Backup utility for CouchDB",
   "main": "index.js",
   "scripts": {
     "standard": "standard --fix",
-    "test": "standard; mocha --exit"
+    "test": "standard"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/glynnbird/couchdsnapshot.git"
+    "url": "git+https://github.com/glynnbird/couchsnapshot.git"
   },
   "keywords": [
     "CouchDB",
@@ -19,9 +19,9 @@
   "author": "Glynn Bird <glynn.bird@gmail.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/glynnbird/couchdsnapshot/issues"
+    "url": "https://github.com/glynnbird/couchsnapshot/issues"
   },
-  "homepage": "https://github.com/glynnbird/couchdsnapshot#readme",
+  "homepage": "https://github.com/glynnbird/couchsnapshot#readme",
   "dependencies": {
     "async": "^3.1.0",
     "changesreader": "^1.2.4",
@@ -33,7 +33,9 @@
     "yargs": "^14.2.0"
   },
   "bin": {
-    "couchdsnapshot": "bin/couchsnapshot.bin.js"
+    "couchsnapshot": "bin/couchsnapshot.bin.js",
+    "couchrecoverid": "bin/couchrecoverid.bin.js",
+    "couchrecoverdb": "bin/couchrecoverdb.bin.js"
   },
   "devDependencies": {
     "standard": "^14.3.1"
