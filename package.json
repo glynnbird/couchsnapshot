@@ -24,7 +24,7 @@
   "homepage": "https://github.com/glynnbird/couchsnapshot#readme",
   "dependencies": {
     "async": "^3.1.0",
-    "changesreader": "^1.2.5",
+    "changesreader": "^1.2.6",
     "debug": "^4.1.1",
     "level": "^5.0.1",
     "nano": "^8.1.0",
