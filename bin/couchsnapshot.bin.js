@@ -11,5 +11,5 @@ const args = require('yargs')
   .argv
 
 // start the data warehouse
-const couchsnapshot = require('../')
+const couchsnapshot = require('../couchsnapshot.js')
 couchsnapshot.start(args)

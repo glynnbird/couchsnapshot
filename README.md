@@ -161,3 +161,12 @@ LevelDB was chosen because it is fast enough to keep up with the CouchDB changes
 To recover a document by id, the LevelDB snapshot databases are interrogated in turn for a matching document (there may be several versions of the same document across the snapshots reflecting different document revisions over time). The snapshots are interrogated in newest-to-oldest order.
 
 To recover an entire database, the snapshots are interrogated in reverse (so newest to oldest) outputing each document but taking care to ensure that each document only appears once. A temporary LevelDB is used to keep track of document ids already processed.
+
+## Limitations
+
+- This tooling doesn't necessarily backup every revision of every document - revisions that occurred between snapshots are ignored.
+- Only winning revisions make it the snapshot archive. If a document is conflicted, non-winning revisions are ignored.
+- CouchDB attachments are not fetched. Only JSON document bodies.
+- Index data (such as MapReduce indexes) are not backed up, but the index definitions (stored in Design Documents) do make it to the snapshot archive.
+
+It is not possible to "roll back" a CouchDB database to a point in time. This utility allows a new, empty database to be populated so that it looks like the snapshotted databases did at the time it was snapshotted.

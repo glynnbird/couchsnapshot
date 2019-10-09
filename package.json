@@ -2,7 +2,7 @@
   "name": "couchsnapshot",
   "version": "0.1.0",
   "description": "Backup utility for CouchDB",
-  "main": "index.js",
+  "main": "couchsnapshot.js",
   "scripts": {
     "standard": "standard --fix",
     "test": "standard"
@@ -46,6 +46,6 @@
     ]
   },
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=10.0.0"
   }
 }
