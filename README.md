@@ -163,7 +163,7 @@ To recover a sub-set of data, supply a `--selector`/`-s` parameter with a JSON M
 # recover only British cities
 couchrecoverdb --db cities --timestamp 2019-10-08T13:25:56.541Z --selector '{"country":"GB"}' > britishcities.txt
 # recover only cities with a population over 1m
-couchrecoverdb --db cities --timestamp 2019-10-08T13:25:56.541Z --selector '{"population":{"$gt":1000000}}' > britishcities.txt
+couchrecoverdb --db cities --timestamp 2019-10-08T13:25:56.541Z --selector '{"population":{"$gt":1000000}}' > bigcities.txt
 ```
 
 ## How does it work?
