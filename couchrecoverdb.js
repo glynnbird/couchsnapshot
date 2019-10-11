@@ -4,14 +4,19 @@ const path = require('path')
 const level = require('level')
 const async = require('async')
 const rimraf = require('rimraf')
+const psc = require('pouchdb-selector-core')
 
 // stream through all items in database and add to
 // a queue
-const enqueueAllData = async (db, q) => {
+const enqueueAllData = async (db, q, selector) => {
   return new Promise((resolve, reject) => {
     db.createReadStream({ reverse: true })
       .on('data', function (data) {
-        q.push(util.reconstruct(data))
+        const doc = util.reconstruct(data)
+        // only queue data that matches selector, if supplied
+        if (!selector || psc.matchesSelector(doc, selector)) {
+          q.push(doc)
+        }
       })
       .on('error', function (err) {
         reject(err)
@@ -68,7 +73,7 @@ const recoverdb = async (opts) => {
       const manifest = JSON.parse(fs.readFileSync(path.join(d, 'manifest.json')))
       if (manifest.numChanges > 0) {
         const db = level(d)
-        await enqueueAllData(db, q)
+        await enqueueAllData(db, q, opts.selector)
         await db.close()
       }
     }

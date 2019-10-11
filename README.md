@@ -8,6 +8,7 @@ Each coloured stripe in the above diagram is a snapshot of changes in a single C
 
 - the history of a single document of a known `_id`.
 - to extract the entire database up to a known timestamp (with a resolution of the snapshot timestamp).
+- to extract a subset of the database up to a known timestamp, using a _selector_ to filter the recovered document list.
 
 The _couchsnapshot_ tooling doesn't have the ability to write data back to CouchDB, but it puts the data in a form that can be conusmed by tools that can e.g. [couchimport](https://www.npmjs.com/package/couchimport).
 
@@ -137,6 +138,7 @@ that each document id is only written once.
 
 - `--database`/`--db`/`-d` - the database snapshot archive to inspect.
 - `--timestamp`/`-t` - the timestamp to recover to.
+- `--selector`/`-s` - the Mango selector definining the sub-set of data to recover.
 
 e.g.
 
@@ -154,6 +156,15 @@ $ cat cities.txt | couchimport --type jsonl --db cities2
 > Note: couchimport version 1.3.0 or above is required to import JSON documents including their revision token.
 
 where `cities2` is pre-existing, empty database.
+
+To recover a sub-set of data, supply a `--selector`/`-s` parameter with a JSON Mango selector e.g.:
+
+```sh
+# recover only British cities
+couchrecoverdb --db cities --timestamp 2019-10-08T13:25:56.541Z --selector '{"country":"GB"}' > britishcities.txt
+# recover only cities with a population over 1m
+couchrecoverdb --db cities --timestamp 2019-10-08T13:25:56.541Z --selector '{"population":{"$gt":1000000}}' > britishcities.txt
+```
 
 ## How does it work?
 
