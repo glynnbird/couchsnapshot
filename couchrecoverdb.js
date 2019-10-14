@@ -6,15 +6,30 @@ const async = require('async')
 const rimraf = require('rimraf')
 const psc = require('pouchdb-selector-core')
 
+// a faster version of psc.matchesSelector, because we pre-massage
+// the supplied selector to save having to massage it every time
+const fastMatchesSelector = (doc, massagedSelector) => {
+  const row = {
+    doc: doc
+  }
+  const rowsMatched = psc.filterInMemoryFields([row], { selector: massagedSelector }, Object.keys(massagedSelector))
+  return rowsMatched && rowsMatched.length === 1
+}
+
 // stream through all items in database and add to
 // a queue
 const enqueueAllData = async (db, q, selector) => {
+  // pre-massage the supplied selector
+  let massagedSelector = null
+  if (selector && typeof selector === 'object') {
+    massagedSelector = psc.massageSelector(selector)
+  }
   return new Promise((resolve, reject) => {
     db.createReadStream({ reverse: true })
       .on('data', function (data) {
         const doc = util.reconstruct(data)
         // only queue data that matches selector, if supplied
-        if (!selector || psc.matchesSelector(doc, selector)) {
+        if (!selector || fastMatchesSelector(doc, massagedSelector)) {
           q.push(doc)
         }
       })
