@@ -4,7 +4,7 @@
 const db = process.env.COUCH_DATABASE
 const args = require('yargs')
   .option('database', { alias: ['db', 'd'], describe: 'Snapshot database name', demandOption: !db, default: db })
-  .option('timestamp', { alias: ['ts'], type: 'string', describe: 'The timestamp to recover from', demandOption: true })
+  .option('timestamp', { alias: ['ts'], type: 'string', describe: 'The timestamp to recover from', demandOption: false })
   .option('selector', { alias: ['s'], type: 'string', describe: 'Selector describing the sub-set of data to recover', demandOption: false })
   .help('help')
   .argv

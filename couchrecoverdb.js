@@ -70,7 +70,13 @@ const recoverdb = async (opts) => {
 
   // reverse the list to get newest first
   dbList.reverse()
-  let foundSnapshot = false
+
+  // this flag decides whether to use a snapshot during recovery
+  // If a timestamp is supplied, we need to ignore snapshots that don't
+  // equal the supplied snapshot timestamp and then use all the following
+  // snapshots. If a timestamp isn't supplied, we can just use all
+  // the snapshots.
+  let foundSnapshot = !opts.timestamp
 
   // this is the queue that de-dupes the list so that a document id
   // only appears once in the output stream. A temporary LevelDB

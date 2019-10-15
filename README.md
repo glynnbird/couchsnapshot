@@ -137,14 +137,21 @@ Retrieves an entire database from the snapshot archive. Outputs to _stdout_. The
 that each document id is only written once.
 
 - `--database`/`--db`/`-d` - the database snapshot archive to inspect.
-- `--timestamp`/`-t` - the timestamp to recover to.
+- `--timestamp`/`-t` - the timestamp to recover to. (optional). If supplied only snapshots equal to and before the supplied timestamp will be used. Must exactly match an existing snapshot's timestamp.
 - `--selector`/`-s` - the Mango selector definining the sub-set of data to recover.
 
 e.g.
 
 ```sh
-# recover a database to a text file
+# recover a database to a text file from a known timestamp
 $ couchrecoverdb --db cities --timestamp 2019-10-08T13:25:56.541Z > cities.txt
+```
+
+or 
+
+```
+# recover a database to a text file using all the snapshots
+$ couchrecoverdb --db cities > cities.txt
 ```
 
 The file `cities.txt` then contains one JSON document per line. This can be imported into CouchDB using the [couchimport](https://www.npmjs.com/package/couchimport) utility:
@@ -161,9 +168,9 @@ To recover a sub-set of data, supply a `--selector`/`-s` parameter with a JSON M
 
 ```sh
 # recover only British cities
-couchrecoverdb --db cities --timestamp 2019-10-08T13:25:56.541Z --selector '{"country":"GB"}' > britishcities.txt
+couchrecoverdb --db cities --selector '{"country":"GB"}' > britishcities.txt
 # recover only cities with a population over 1m
-couchrecoverdb --db cities --timestamp 2019-10-08T13:25:56.541Z --selector '{"population":{"$gt":1000000}}' > bigcities.txt
+couchrecoverdb --db cities --selector '{"population":{"$gt":1000000}}' > bigcities.txt
 ```
 
 ## How does it work?
@@ -183,4 +190,4 @@ To recover an entire database, the snapshots are interrogated in reverse (so new
 - CouchDB attachments are not fetched. Only JSON document bodies.
 - Index data (such as MapReduce indexes) are not backed up, but the index definitions (stored in Design Documents) do make it to the snapshot archive.
 
-It is not possible to "roll back" a CouchDB database to a point in time. This utility allows a new, empty database to be populated so that it looks like the snapshotted databases did at the time it was snapshotted.
+It is not possible to "roll back" a CouchDB database to a point in time. This utility allows a new, empty database to be populated so that it looks like the snapshotted database did at the time it was snapshotted.
