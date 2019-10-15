@@ -85,14 +85,13 @@ const start = async (opts) => {
 
   // spool changes
   debug('Spooling changes')
-  opts.usableDbName = util.calculateUsableDbName(opts, opts.database, null)
   const status = await spoolChanges(opts, maxChange)
   await sqldb.close()
 
   // write meta data
   const ts = new Date().toISOString()
-  const newDir = opts.usableDbName + '_' + ts
-  fs.renameSync(opts.usableDbName, newDir)
+  const newDir = opts.database + '_' + ts
+  fs.renameSync(opts.database, newDir)
 
   // write manifest
   const obj = {

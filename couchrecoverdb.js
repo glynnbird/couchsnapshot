@@ -24,11 +24,18 @@ const enqueueAllData = async (db, q, selector) => {
   if (selector && typeof selector === 'object') {
     massagedSelector = psc.massageSelector(selector)
   }
+
+  // return a promise - this is an asynchronous operation
   return new Promise((resolve, reject) => {
+    // read through every document in reverse order
     db.createReadStream({ reverse: true })
+      // when we get a block of data
       .on('data', function (data) {
+        // reunite the id/rev with the document bodies
         const doc = util.reconstruct(data)
         // only queue data that matches selector, if supplied
+        // the queue is used to dedupe the output so that a document
+        // id only appears once in the recovery stream.
         if (!selector || fastMatchesSelector(doc, massagedSelector)) {
           q.push(doc)
         }
@@ -58,35 +65,58 @@ const recoverdb = async (opts) => {
   const progressDBName = 'recoverdb_progress_' + randomDBName()
   const progressDB = level(progressDBName)
 
+  // get a list of snapshots
   const dbList = util.getFileList(opts.database, '.')
+
   // reverse the list to get newest first
   dbList.reverse()
   let foundSnapshot = false
 
+  // this is the queue that de-dupes the list so that a document id
+  // only appears once in the output stream. A temporary LevelDB
+  // database is used to keep track of the document ids we've already
+  // outputted. The database is deleted at the end of the recovery.
   const q = async.queue(function (task, cb) {
+    // extract the document id
     const id = task._id
+
+    // see if the the document id has already appeared
+    // in our output stream
     progressDB.get(id, function (err, value) {
+      // if it hasn't
       if (err && err.notFound) {
+        // add the id to our temporary database
         progressDB.put(id, 'x', function () {
+          // output to the console
           console.log(JSON.stringify(task))
           return cb()
         })
       } else {
+        // if this id has been output already, do nothing
         return cb()
       }
     })
   })
 
+  // for each snapshot in the list (in reverse order)
   for (var i in dbList) {
     // load the manifest
     const d = dbList[i]
+
+    // if this is the snapshot the user has specified
     if (!foundSnapshot && d === opts.database + '_' + opts.timestamp) {
+      // use this snapshot, and all snapshots from now on
       foundSnapshot = true
     }
 
+    // if we're to use this database
     if (foundSnapshot) {
+      // load its manifest file
       const manifest = JSON.parse(fs.readFileSync(path.join(d, 'manifest.json')))
+
+      // if it contains more than 0 changes
       if (manifest.numChanges > 0) {
+        // load its data and add it to the queue
         const db = level(d)
         await enqueueAllData(db, q, opts.selector)
         await db.close()
@@ -94,9 +124,13 @@ const recoverdb = async (opts) => {
     }
   }
 
-  // or await the end
+  // await the draining of the queue
   await q.drain()
+
+  // close the temporary database
   await progressDB.close()
+
+  // delete it
   rimraf.sync(progressDBName)
 }
 

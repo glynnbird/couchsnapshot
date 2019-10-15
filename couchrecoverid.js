@@ -3,6 +3,10 @@ const fs = require('fs')
 const path = require('path')
 const level = require('level')
 
+// fetch all documents from a snapshot that pertain to a known
+// document id (k). Performs a range query on the key-space
+// because there could be more than one entry for a single
+// document id.
 const getAllValues = async (db, k) => {
   const retval = []
   return new Promise((resolve, reject) => {
@@ -18,6 +22,10 @@ const getAllValues = async (db, k) => {
       })
   })
 }
+
+// work backwards through the list of snapshots looking for
+// a single document id. If latest=true, stop when we find
+// the first reference to the document id in question.
 const recoverId = async (opts) => {
   const dbList = util.getFileList(opts.database, '.')
   // reverse the list to get newest first
