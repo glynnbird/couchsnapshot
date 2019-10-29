@@ -139,6 +139,7 @@ that each document id is only written once.
 - `--database`/`--db`/`-d` - the database snapshot archive to inspect.
 - `--timestamp`/`-t` - the timestamp to recover to. (optional). If supplied only snapshots equal to and before the supplied timestamp will be used. Must exactly match an existing snapshot's timestamp.
 - `--selector`/`-s` - the Mango selector definining the sub-set of data to recover.
+- `--ignoredeletions`/`-i` - if true, ignores documents that are deleted i.e. allows you to recover that last undeleted revision of each document.
 
 e.g.
 

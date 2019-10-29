@@ -18,7 +18,7 @@ const fastMatchesSelector = (doc, massagedSelector) => {
 
 // stream through all items in database and add to
 // a queue
-const enqueueAllData = async (db, q, selector) => {
+const enqueueAllData = async (db, q, selector, ignoreDeletions) => {
   // pre-massage the supplied selector
   let massagedSelector = null
   if (selector && typeof selector === 'object') {
@@ -37,7 +37,9 @@ const enqueueAllData = async (db, q, selector) => {
         // the queue is used to dedupe the output so that a document
         // id only appears once in the recovery stream.
         if (!selector || fastMatchesSelector(doc, massagedSelector)) {
-          q.push(doc)
+          if (!ignoreDeletions || (ignoreDeletions && !(doc._deleted === true))) {
+            q.push(doc)
+          }
         }
       })
       .on('error', function (err) {
@@ -124,7 +126,7 @@ const recoverdb = async (opts) => {
       if (manifest.numChanges > 0) {
         // load its data and add it to the queue
         const db = level(d)
-        await enqueueAllData(db, q, opts.selector)
+        await enqueueAllData(db, q, opts.selector, opts.ignoredeletions)
         await db.close()
       }
     }
