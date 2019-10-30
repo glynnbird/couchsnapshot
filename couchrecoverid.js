@@ -30,6 +30,7 @@ const recoverId = async (opts) => {
   const dbList = util.getFileList(opts.database, '.')
   // reverse the list to get newest first
   dbList.reverse()
+  let foundCount = 0
   for (var i in dbList) {
     // load the manifest
     const d = dbList[i]
@@ -40,11 +41,16 @@ const recoverId = async (opts) => {
     const data = await getAllValues(db, opts.id)
     await db.close()
     if (data.length > 0) {
-      console.error('\nFrom backup taken on ', manifest.timestamp, '\n')
-      for (var j in data) {
-        console.log(JSON.stringify(data[j]))
+      if (opts.verbose) {
+        console.error('\nFrom backup taken on ', manifest.timestamp, '\n')
       }
-      if (opts.latest) {
+      for (var j in data) {
+        if (!opts.ignoredeletions || (opts.ignoredeletions && !(data[j]._deleted === true))) {
+          console.log(JSON.stringify(data[j]))
+          foundCount++
+        }
+      }
+      if (foundCount > 0 && opts.latest) {
         break
       }
     }

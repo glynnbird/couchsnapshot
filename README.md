@@ -100,7 +100,7 @@ Parameters:
 
 - `--url`/`-u` - the URL of your CouchDB service
 - `--database`/`--db`/`-d` - the database to snapshot
-- `--verbose` - output progress meter - default: true 
+- `--verbose`/`-v` - output progress meter - default: true 
 
 e.g. 
 
@@ -117,8 +117,10 @@ Written snapshot with 2 changes to cities_2019-10-08T14:25:01.065Z
 Retrieves a single document from the snapshot archive. Outputs to _stdout_.
 
 - `--database`/`--db`/`-d` - the database snapshot archive to inspect.
-- `--id`/`-i` - the document id to recover.
+- `--id` - the document id to recover.
 - `--latest`/`-l` - only retrieve one document revision (the newest one) - default: false.
+- `--ignoredeletions`/`-i` - if true, ignores documents that are deleted i.e. allows you to recover that latest undeleted revision of a document.
+- `--verbose`/`-v` - output progress meter - default: true 
 
 e.g.
 
@@ -139,7 +141,7 @@ that each document id is only written once.
 - `--database`/`--db`/`-d` - the database snapshot archive to inspect.
 - `--timestamp`/`-t` - the timestamp to recover to. (optional). If supplied only snapshots equal to and before the supplied timestamp will be used. Must exactly match an existing snapshot's timestamp.
 - `--selector`/`-s` - the Mango selector definining the sub-set of data to recover.
-- `--ignoredeletions`/`-i` - if true, ignores documents that are deleted i.e. allows you to recover that last undeleted revision of each document.
+- `--ignoredeletions`/`-i` - if true, ignores documents that are deleted i.e. allows you to recover that latest undeleted revision of each document.
 
 e.g.
 

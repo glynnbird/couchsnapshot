@@ -1,6 +1,6 @@
 {
   "name": "couchsnapshot",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Backup utility for CouchDB",
   "main": "couchsnapshot.js",
   "scripts": {
