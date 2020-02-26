@@ -4,7 +4,7 @@ const debug = require('debug')('couchsnapshot')
 const util = require('./lib/util.js')
 const fs = require('fs')
 const path = require('path')
-let nano
+const axios = require('axios').default
 const sqldb = require('./lib/leveldb.js')
 
 // download a whole changes feed in one long HTTP request
@@ -19,7 +19,7 @@ const spoolChanges = async (opts, maxChange) => {
   // return a Promise
   return new Promise((resolve, reject) => {
     // start spooling changes
-    const changesReader = new ChangesReader(opts.database, nano.request)
+    const changesReader = new ChangesReader(opts.database, opts.url)
     const func = changesReader.spool
     const params = { since: opts.since, includeDocs: true }
     let numChanges = 0
@@ -69,14 +69,19 @@ const start = async (opts) => {
     console.log('Resuming from last known sequence', util.extractSequenceNumber(ls))
   }
 
-  // setup nano
-  nano = require('nano')(opts.url)
-
   // get latest revision token of the target database, to
   // give us something to aim for
   debug('Getting last change from CouchDB')
-  const req = { db: opts.database, path: '_changes', qs: { since: 'now', limit: 1 } }
-  const info = await nano.request(req)
+  const req = {
+    baseURL: opts.url,
+    url: opts.database + '/_changes',
+    params: {
+      since: 'now',
+      limit: 1
+    }
+  }
+  const response = await axios(req)
+  const info = response.data
   const maxChange = util.extractSequenceNumber(info.last_seq)
 
   // initialise database
