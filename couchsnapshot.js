@@ -1,11 +1,12 @@
-const ChangesReader = require('changesreader')
 const ProgressBar = require('progress')
 const debug = require('debug')('couchsnapshot')
 const util = require('./lib/util.js')
 const fs = require('fs')
 const path = require('path')
-const axios = require('axios').default
 const sqldb = require('./lib/leveldb.js')
+const Nano = require('nano')
+let nano
+let db
 
 // download a whole changes feed in one long HTTP request
 const spoolChanges = async (opts, maxChange) => {
@@ -17,38 +18,29 @@ const spoolChanges = async (opts, maxChange) => {
   }
 
   // return a Promise
+  let numChanges = 0
   return new Promise((resolve, reject) => {
-    // start spooling changes
-    const changesReader = new ChangesReader(opts.database, opts.url)
-    const func = changesReader.spool
-    const params = { since: opts.since, includeDocs: true }
-    let numChanges = 0
+    db.changesReader.spool({ since: opts.since, includeDocs: true })
+      .on('batch', async (b) => {
+        if (b.length > 0) {
+          // perform database operation
+          await sqldb.insertBulk(opts, opts.database, b)
+          numChanges += b.length
 
-    func.apply(changesReader, [params]).on('batch', async (b, done) => {
-      if (b.length > 0) {
-        // perform database operation
-        await sqldb.insertBulk(opts, opts.database, b)
-        numChanges += b.length
-
-        // update the progress bar
+          // update the progress bar
+          if (opts.verbose) {
+            bar.tick(b.length)
+          }
+        }
+      }).on('end', (lastSeq) => {
+        // complete the progress bar
         if (opts.verbose) {
-          bar.tick(b.length)
+          bar.tick(bar.total - bar.curr)
         }
 
-        // call the done callback if provided
-        if (typeof done === 'function') {
-          done()
-        }
-      }
-    }).on('end', async (lastSeq) => {
-      // complete the progress bar
-      if (opts.verbose) {
-        bar.tick(bar.total - bar.curr)
-      }
-
-      // pass back the last known sequence token
-      resolve({ lastSeq: lastSeq, numChanges: numChanges })
-    }).on('error', reject)
+        // pass back the last known sequence token
+        resolve({ lastSeq: lastSeq, numChanges: numChanges })
+      }).on('error', reject)
   })
 }
 
@@ -62,6 +54,10 @@ const start = async (opts) => {
   }
   opts = Object.assign(defaults, opts)
 
+  // configure nano
+  nano = Nano({ url: opts.url })
+  db = nano.db.use(opts.database)
+
   // get lastSeq from previous backups
   const ls = util.getLastSeq(opts.database)
   if (ls) {
@@ -70,21 +66,15 @@ const start = async (opts) => {
   }
 
   // get latest revision token of the target database, to
-  // give us something to aim for
+  // give us something to aim for (for the progress meter)
   debug('Getting last change from CouchDB')
-  const req = {
-    baseURL: opts.url,
-    url: opts.database + '/_changes',
-    params: {
-      since: 'now',
-      limit: 1
-    }
-  }
-  const response = await axios(req)
-  const info = response.data
+  const info = await db.changes({
+    since: 'now',
+    limit: 1
+  })
   const maxChange = util.extractSequenceNumber(info.last_seq)
 
-  // initialise database
+  // initialise sqlite database
   debug('Initalise database')
   await sqldb.initialise(opts)
 

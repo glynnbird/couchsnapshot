@@ -55,7 +55,7 @@ const enqueueAllData = async (db, q, selector, ignoreDeletions) => {
 const randomDBName = () => {
   const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789'
   const retval = []
-  for (var i = 0; i < 10; i++) {
+  for (let i = 0; i < 10; i++) {
     retval.push(alphabet[Math.floor(Math.random() * alphabet.length)])
   }
   return retval.join('')
@@ -107,7 +107,7 @@ const recoverdb = async (opts) => {
   })
 
   // for each snapshot in the list (in reverse order)
-  for (var i in dbList) {
+  for (const i in dbList) {
     // load the manifest
     const d = dbList[i]
 

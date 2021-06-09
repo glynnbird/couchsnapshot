@@ -31,7 +31,7 @@ const recoverId = async (opts) => {
   // reverse the list to get newest first
   dbList.reverse()
   let foundCount = 0
-  for (var i in dbList) {
+  for (const i in dbList) {
     // load the manifest
     const d = dbList[i]
     const manifest = JSON.parse(fs.readFileSync(path.join(d, 'manifest.json')))
@@ -44,7 +44,7 @@ const recoverId = async (opts) => {
       if (opts.verbose) {
         console.error('\nFrom backup taken on ', manifest.timestamp, '\n')
       }
-      for (var j in data) {
+      for (const j in data) {
         if (!opts.ignoredeletions || (opts.ignoredeletions && !(data[j]._deleted === true))) {
           console.log(JSON.stringify(data[j]))
           foundCount++
