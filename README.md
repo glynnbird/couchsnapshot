@@ -82,7 +82,7 @@ where `2019-10-08T10:43:53.569Z` is a valid timestamp from one of your snapshots
 The data is sent to _stdout_ and can redirected to a file with:
 
 ```sh
-$ couchrecoverdb --db orders --timestamp 2019-10-08T10:43:53.569Z > orders.txt
+$ couchrecoverdb --db orders --timestamp 2019-10-08T10:43:53.569Z > restore.txt
 ```
 
 ## Reference
@@ -100,7 +100,7 @@ Parameters:
 
 - `--url`/`-u` - the URL of your CouchDB service
 - `--database`/`--db`/`-d` - the database to snapshot
-- `--verbose`/`-v` - output progress meter - default: true 
+- `--verbose`/`-v` - output progress meter - default: true
 
 e.g. 
 
@@ -142,25 +142,26 @@ that each document id is only written once.
 - `--timestamp`/`-t` - the timestamp to recover to. (optional). If supplied only snapshots equal to and before the supplied timestamp will be used. Must exactly match an existing snapshot's timestamp.
 - `--selector`/`-s` - the Mango selector definining the sub-set of data to recover.
 - `--ignoredeletions`/`-i` - if true, ignores documents that are deleted i.e. allows you to recover that latest undeleted revision of each document.
+- `--dedupe` - de-duplicate output so that an `_id` only appears once - default true
 
 e.g.
 
 ```sh
 # recover a database to a text file from a known timestamp
-$ couchrecoverdb --db cities --timestamp 2019-10-08T13:25:56.541Z > cities.txt
+$ couchrecoverdb --db cities --timestamp 2019-10-08T13:25:56.541Z > out.txt
 ```
 
 or 
 
 ```
 # recover a database to a text file using all the snapshots
-$ couchrecoverdb --db cities > cities.txt
+$ couchrecoverdb --db cities > out.txt
 ```
 
-The file `cities.txt` then contains one JSON document per line. This can be imported into CouchDB using the [couchimport](https://www.npmjs.com/package/couchimport) utility:
+The file `out.txt` then contains one JSON document per line. This can be imported into CouchDB using the [couchimport](https://www.npmjs.com/package/couchimport) utility:
 
 ```sh
-$ cat cities.txt | couchimport --type jsonl --db cities2
+$ cat out.txt | couchimport --type jsonl --db cities2
 ```
 
 > Note: couchimport version 1.3.0 or above is required to import JSON documents including their revision token.

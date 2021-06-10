@@ -7,7 +7,8 @@ const args = require('yargs')
   .option('timestamp', { alias: ['ts'], type: 'string', describe: 'The timestamp to recover from', demandOption: false })
   .option('selector', { alias: ['s'], type: 'string', describe: 'Selector describing the sub-set of data to recover', demandOption: false })
   .option('ignoredeletions', { alias: ['i'], type: 'boolean', describe: 'When true, only recovers documents which are not deleted.', demandOption: false, default: false })
-  .option('verbose', { describe: 'Show instructions and progress in the output', default: true })
+  .option('verbose', { describe: 'Show instructions and progress in the output', default: true, type: 'boolean' })
+  .option('dedupe', { describe: 'Dedupe output - each _id only appears once', default: true, type: 'boolean' })
   .help('help')
   .argv
 

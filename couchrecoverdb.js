@@ -1,5 +1,6 @@
 const util = require('./lib/util.js')
 const fs = require('fs')
+const os = require('os')
 const path = require('path')
 const level = require('level')
 const async = require('async')
@@ -18,7 +19,7 @@ const fastMatchesSelector = (doc, massagedSelector) => {
 
 // stream through all items in database and add to
 // a queue
-const enqueueAllData = async (db, q, selector, ignoreDeletions) => {
+const enqueueAllData = async (db, q, selector, ignoreDeletions, dedupe) => {
   // pre-massage the supplied selector
   let massagedSelector = null
   if (selector && typeof selector === 'object') {
@@ -28,7 +29,7 @@ const enqueueAllData = async (db, q, selector, ignoreDeletions) => {
   // return a promise - this is an asynchronous operation
   return new Promise((resolve, reject) => {
     // read through every document in reverse order
-    db.createReadStream({ reverse: true })
+    const rs = db.createReadStream({ reverse: true })
       // when we get a block of data
       .on('data', function (data) {
         // reunite the id/rev with the document bodies
@@ -38,7 +39,21 @@ const enqueueAllData = async (db, q, selector, ignoreDeletions) => {
         // id only appears once in the recovery stream.
         if (!selector || fastMatchesSelector(doc, massagedSelector)) {
           if (!ignoreDeletions || (ignoreDeletions && !(doc._deleted === true))) {
-            q.push(doc)
+            // if we are to dedupe the output, then push it to the queue
+            if (dedupe) {
+              q.push(doc)
+              // don't let the queue build to up too much
+              // pause and resume to give the queue a chance to recede
+              if (q.length() > 100000) {
+                rs.pause()
+                setTimeout(() => {
+                  rs.resume()
+                }, 1000)
+              }
+            } else {
+              // output the doc
+              console.log(JSON.stringify(doc))
+            }
           }
         }
       })
@@ -63,9 +78,14 @@ const randomDBName = () => {
 
 // recover a database (to stdout)
 const recoverdb = async (opts) => {
+  let progressDB, progressDBName
+
   // create a levelDB database to store progress
-  const progressDBName = 'recoverdb_progress_' + randomDBName()
-  const progressDB = level(progressDBName)
+  if (opts.dedupe) {
+    const tmp = os.tmpdir()
+    progressDBName = path.join(tmp, 'recoverdb_progress_' + randomDBName())
+    progressDB = level(progressDBName)
+  }
 
   // get a list of snapshots
   const dbList = util.getFileList(opts.database, '.')
@@ -120,20 +140,22 @@ const recoverdb = async (opts) => {
       if (manifest.numChanges > 0) {
         // load its data and add it to the queue
         const db = level(d)
-        await enqueueAllData(db, q, opts.selector, opts.ignoredeletions)
+        await enqueueAllData(db, q, opts.selector, opts.ignoredeletions, opts.dedupe)
         await db.close()
       }
     }
   }
 
   // await the draining of the queue
-  await q.drain()
+  if (opts.dedupe) {
+    await q.drain()
 
-  // close the temporary database
-  await progressDB.close()
+    // close the temporary database
+    await progressDB.close()
 
-  // delete it
-  rimraf.sync(progressDBName)
+    // delete it
+    rimraf.sync(progressDBName)
+  }
 }
 
 module.exports = {
