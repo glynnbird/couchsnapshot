@@ -84,26 +84,20 @@ const recoverdb = async (opts) => {
   // only appears once in the output stream. A temporary LevelDB
   // database is used to keep track of the document ids we've already
   // outputted. The database is deleted at the end of the recovery.
-  const q = async.queue(function (task, cb) {
+  const q = async.queue(async (task) => {
     // extract the document id
     const id = task._id
 
     // see if the the document id has already appeared
     // in our output stream
-    progressDB.get(id, function (err, value) {
-      // if it hasn't
-      if (err && err.notFound) {
-        // add the id to our temporary database
-        progressDB.put(id, 'x', function () {
-          // output to the console
-          console.log(JSON.stringify(task))
-          return cb()
-        })
-      } else {
-        // if this id has been output already, do nothing
-        return cb()
+    try {
+      await progressDB.get(id)
+    } catch (e) {
+      if (e.notFound) {
+        await progressDB.put(id, 'x')
+        console.log(JSON.stringify(task))
       }
-    })
+    }
   })
 
   // for each snapshot in the list (in reverse order)
