@@ -78,7 +78,7 @@ const randomDBName = () => {
 
 // recover a database (to stdout)
 const recoverdb = async (opts) => {
-  let progressDB, progressDBName
+  let progressDB, progressDBName, rollupDB, rollupDBName
 
   // create a levelDB database to store progress
   if (opts.dedupe) {
@@ -111,16 +111,27 @@ const recoverdb = async (opts) => {
     // see if the the document id has already appeared
     // in our output stream
     try {
+      // fetch document from db - if the id isn't in the db, an error is thrown
       await progressDB.get(id)
     } catch (e) {
+      // if the error indicates that id isn't in the output db
       if (e.notFound) {
         await progressDB.put(id, 'x')
-        console.log(JSON.stringify(task))
+        if (opts.rollup) {
+          const newid = task._id + '#' + task._rev
+          delete task._id
+          delete task._rev
+          await rollupDB.put(newid, JSON.stringify(task))
+        } else {
+          console.log(JSON.stringify(task))
+        }
       }
     }
   })
 
   // for each snapshot in the list (in reverse order)
+  let firstFile = true
+  const directories = []
   for (const i in dbList) {
     // load the manifest
     const d = dbList[i]
@@ -133,6 +144,14 @@ const recoverdb = async (opts) => {
 
     // if we're to use this database
     if (foundSnapshot) {
+      if (firstFile) {
+        if (opts.rollup) {
+          rollupDBName = d + '_ROLLUP'
+          rollupDB = level(rollupDBName)
+        }
+        firstFile = false
+      }
+      directories.push(d)
       // load its manifest file
       const manifest = JSON.parse(fs.readFileSync(path.join(d, 'manifest.json')))
 
@@ -152,9 +171,23 @@ const recoverdb = async (opts) => {
 
     // close the temporary database
     await progressDB.close()
+    if (opts.rollup) {
+      await rollupDB.close()
+      // copy the manifest from the newest rolled-up dictory
+      const src = path.join(directories[0], 'manifest.json')
+      const dest = path.join(rollupDBName, 'manifest.json')
+      fs.copyFileSync(src, dest)
+    }
 
     // delete it
     rimraf.sync(progressDBName)
+
+    // delete unwanted databases
+    if (opts.rollup) {
+      for (const i in directories) {
+        rimraf.sync(directories[i])
+      }
+    }
   }
 }
 
