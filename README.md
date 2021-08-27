@@ -177,6 +177,30 @@ couchrecoverdb --db cities --selector '{"country":"GB"}' > britishcities.txt
 couchrecoverdb --db cities --selector '{"population":{"$gt":1000000}}' > bigcities.txt
 ```
 
+### couchrollupdb
+
+Rolls up a set of snapshots into one:
+
+- `--database`/`--db`/`-d` - the database snapshot archive to inspect.
+- `--timestamp`/`-t` - the timestamp to recover to. (optional). If supplied only snapshots equal to and before the supplied timestamp will be used. Must exactly match an existing snapshot's timestamp.
+
+e.g.
+
+```sh
+# rollup the backups
+$ couchrollupdb --db cities --timestamp 2019-10-08T13:25:56.541Z
+```
+
+or 
+
+```
+# rollup the backups
+$ couchrecoverdb --db cities > out.txt
+```
+
+> Rolling up means deduping the data set so that there is only one copy of each non-deleted document. Many snapshots can be combined into one and the originals deleted.
+
+
 ## How does it work?
 
 The _couchsnapshot_ utility simply takes a copy of the winning revisions of each document in a database by consuming a databases's changes feed. The data is stored in a local LevelDB database - one LevelDB database per snapshot, where each key/value pair represents a document. Additional data such as the last sequence number and timestamp is added to each database. 
