@@ -146,7 +146,7 @@ const recoverdb = async (opts) => {
     if (foundSnapshot) {
       if (firstFile) {
         if (opts.rollup) {
-          rollupDBName = d + '_ROLLUP'
+          rollupDBName = '_' + d + '_ROLLUP'
           rollupDB = level(rollupDBName)
         }
         firstFile = false
@@ -172,14 +172,20 @@ const recoverdb = async (opts) => {
     // close the temporary database
     await progressDB.close()
     if (opts.rollup) {
+      // close the database
       await rollupDB.close()
+
       // copy the manifest from the newest rolled-up dictory
       const src = path.join(directories[0], 'manifest.json')
       const dest = path.join(rollupDBName, 'manifest.json')
       fs.copyFileSync(src, dest)
+
+      // move the rolled up database into place
+      const destDir = rollupDBName.replace(/^_/, '')
+      fs.renameSync(rollupDBName, destDir)
     }
 
-    // delete it
+    // delete the progress database
     rimraf.sync(progressDBName)
 
     // delete unwanted databases

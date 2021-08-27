@@ -3,7 +3,7 @@ const debug = require('debug')('couchsnapshot')
 const util = require('./lib/util.js')
 const fs = require('fs')
 const path = require('path')
-const sqldb = require('./lib/leveldb.js')
+const leveldb = require('./lib/leveldb.js')
 const Nano = require('nano')
 let nano
 let db
@@ -24,7 +24,7 @@ const spoolChanges = async (opts, maxChange) => {
       .on('batch', async (b) => {
         if (b.length > 0) {
           // perform database operation
-          await sqldb.insertBulk(opts, opts.database, b)
+          await leveldb.insertBulk(opts, opts.database, b)
           numChanges += b.length
 
           // update the progress bar
@@ -74,19 +74,20 @@ const start = async (opts) => {
   })
   const maxChange = util.extractSequenceNumber(info.last_seq)
 
-  // initialise sqlite database
+  // initialise leveldb database
   debug('Initalise database')
-  await sqldb.initialise(opts)
+  const tmpdbname = '_' + opts.database
+  await leveldb.initialise({ database: tmpdbname })
 
   // spool changes
   debug('Spooling changes')
   const status = await spoolChanges(opts, maxChange)
-  await sqldb.close()
+  await leveldb.close()
 
   // write meta data
   const ts = new Date().toISOString()
   const newDir = opts.database + '_' + ts
-  fs.renameSync(opts.database, newDir)
+  fs.renameSync(tmpdbname, newDir)
 
   // write manifest
   const obj = {
