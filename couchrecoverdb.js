@@ -2,10 +2,12 @@ const util = require('./lib/util.js')
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
-const level = require('level')
+const { Level } = require('level')
+const { EntryStream } = require('level-read-stream')
 const async = require('async')
 const rimraf = require('rimraf')
 const psc = require('pouchdb-selector-core')
+
 
 // a faster version of psc.matchesSelector, because we pre-massage
 // the supplied selector to save having to massage it every time
@@ -29,7 +31,7 @@ const enqueueAllData = async (db, q, selector, ignoreDeletions, dedupe) => {
   // return a promise - this is an asynchronous operation
   return new Promise((resolve, reject) => {
     // read through every document in reverse order
-    const rs = db.createReadStream({ reverse: true })
+    const rs = new EntryStream(db, { reverse: true })
       // when we get a block of data
       .on('data', function (data) {
         // reunite the id/rev with the document bodies
@@ -84,7 +86,7 @@ const recoverdb = async (opts) => {
   if (opts.dedupe) {
     const tmp = os.tmpdir()
     progressDBName = path.join(tmp, 'recoverdb_progress_' + randomDBName())
-    progressDB = level(progressDBName)
+    progressDB = new Level(progressDBName)
   }
 
   // get a list of snapshots
@@ -147,7 +149,7 @@ const recoverdb = async (opts) => {
       if (firstFile) {
         if (opts.rollup) {
           rollupDBName = '_' + d + '_ROLLUP'
-          rollupDB = level(rollupDBName)
+          rollupDB = new Level(rollupDBName)
         }
         firstFile = false
       }
@@ -158,7 +160,7 @@ const recoverdb = async (opts) => {
       // if it contains more than 0 changes
       if (manifest.numChanges > 0) {
         // load its data and add it to the queue
-        const db = level(d)
+        const db = new Level(d)
         await enqueueAllData(db, q, opts.selector, opts.ignoredeletions, opts.dedupe)
         await db.close()
       }

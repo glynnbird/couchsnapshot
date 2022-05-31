@@ -1,7 +1,8 @@
 const util = require('./lib/util.js')
 const fs = require('fs')
 const path = require('path')
-const level = require('level')
+const { Level } = require('level')
+const { EntryStream } = require('level-read-stream')
 
 // fetch all documents from a snapshot that pertain to a known
 // document id (k). Performs a range query on the key-space
@@ -10,7 +11,7 @@ const level = require('level')
 const getAllValues = async (db, k) => {
   const retval = []
   return new Promise((resolve, reject) => {
-    db.createReadStream({ gte: k + '#', lte: k + '#z' })
+    new EntryStream(db, { gte: k + '#', lte: k + '#z' })
       .on('data', function (data) {
         retval.push(util.reconstruct(data))
       })
@@ -37,7 +38,7 @@ const recoverId = async (opts) => {
     const manifest = JSON.parse(fs.readFileSync(path.join(d, 'manifest.json')))
 
     // connect to LevelDB
-    const db = level(d)
+    const db = new Level(d)
     const data = await getAllValues(db, opts.id)
     await db.close()
     if (data.length > 0) {

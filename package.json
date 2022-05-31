@@ -1,6 +1,6 @@
 {
   "name": "couchsnapshot",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Backup utility for CouchDB",
   "main": "couchsnapshot.js",
   "scripts": {
@@ -26,6 +26,7 @@
     "async": "^3.2.3",
     "debug": "^4.3.4",
     "level": "^8.0.0",
+    "level-read-stream": "^1.1.0",
     "nano": "^10.0.0",
     "pouchdb-selector-core": "^7.3.0",
     "progress": "^2.0.3",
