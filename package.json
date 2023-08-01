@@ -1,6 +1,6 @@
 {
   "name": "couchsnapshot",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "Backup utility for CouchDB",
   "main": "couchsnapshot.js",
   "scripts": {
@@ -23,15 +23,15 @@
   },
   "homepage": "https://github.com/glynnbird/couchsnapshot#readme",
   "dependencies": {
-    "async": "^3.2.3",
+    "async": "^3.2.4",
     "debug": "^4.3.4",
     "level": "^8.0.0",
     "level-read-stream": "^1.1.0",
-    "nano": "^10.0.0",
-    "pouchdb-selector-core": "^7.3.0",
+    "nano": "^10.1.2",
+    "pouchdb-selector-core": "^8.0.1",
     "progress": "^2.0.3",
-    "rimraf": "^3.0.2",
-    "yargs": "^17.5.1"
+    "rimraf": "^5.0.1",
+    "yargs": "^17.7.2"
   },
   "bin": {
     "couchsnapshot": "bin/couchsnapshot.bin.js",
