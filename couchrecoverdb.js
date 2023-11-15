@@ -8,12 +8,11 @@ const async = require('async')
 const rimraf = require('rimraf')
 const psc = require('pouchdb-selector-core')
 
-
 // a faster version of psc.matchesSelector, because we pre-massage
 // the supplied selector to save having to massage it every time
 const fastMatchesSelector = (doc, massagedSelector) => {
   const row = {
-    doc: doc
+    doc
   }
   const rowsMatched = psc.filterInMemoryFields([row], { selector: massagedSelector }, Object.keys(massagedSelector))
   return rowsMatched && rowsMatched.length === 1

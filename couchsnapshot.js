@@ -39,7 +39,7 @@ const spoolChanges = async (opts, maxChange) => {
         }
 
         // pass back the last known sequence token
-        resolve({ lastSeq: lastSeq, numChanges: numChanges })
+        resolve({ lastSeq, numChanges })
       }).on('error', reject)
   })
 }
@@ -106,5 +106,5 @@ const start = async (opts) => {
 }
 
 module.exports = {
-  start: start
+  start
 }
