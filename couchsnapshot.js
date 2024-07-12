@@ -1,5 +1,4 @@
 const ProgressBar = require('progress')
-const debug = require('debug')('couchsnapshot')
 const util = require('./lib/util.js')
 const fs = require('fs')
 const path = require('path')
@@ -7,6 +6,13 @@ const leveldb = require('./lib/leveldb.js')
 const Nano = require('nano')
 let nano
 let db
+
+// low-rent "debug" alternative
+const debug = (str) => {
+  if(process.env.DEBUG) {
+    console.log(str)
+  }
+}
 
 // download a whole changes feed in one long HTTP request
 const spoolChanges = async (opts, maxChange) => {
