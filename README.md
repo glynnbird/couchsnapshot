@@ -1,5 +1,7 @@
 # couchsnapshot
 
+> No longer supported, see [couchsnap](https://www.npmjs.com/package/couchsnap) instead.
+
 _couchsnapshot_ is a suite of command-line utilities that allow a CouchDB database to be backed up as a series of timestamped snapshots. 
 
 ![couchsnapshot](img/couchsnapshot.png)
